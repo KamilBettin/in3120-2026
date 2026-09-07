@@ -61,7 +61,17 @@ class PostingsMerger:
         All posting lists are assumed sorted in increasing order according
         to the document identifiers.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        posting1 = next(iter1, None)
+        posting2 = next(iter2, None)
+        while posting1 is not None and posting2 is not None:
+            if posting1.document_id < posting2.document_id:
+                posting1 = next(iter1, None)
+            elif posting1.document_id > posting2.document_id:
+                posting2 = next(iter2, None)
+            else:
+                yield posting1
+                posting1 = next(iter1, None)
+                posting2 = next(iter2, None)
 
     @staticmethod
     def union(iter1: Iterator[Posting], iter2: Iterator[Posting]) -> Iterator[Posting]:
@@ -78,7 +88,26 @@ class PostingsMerger:
         All posting lists are assumed sorted in increasing order according
         to the document identifiers.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        posting1 = next(iter1, None)
+        posting2 = next(iter2, None)
+        while posting1 is not None and posting2 is not None:
+            if posting1.document_id < posting2.document_id:
+                yield posting1
+                posting1 = next(iter1, None)
+            elif posting1.document_id > posting2.document_id:
+                yield posting2
+                posting2 = next(iter2, None)
+            else:
+                yield posting1
+                posting1 = next(iter1, None)
+                posting2 = next(iter2, None)
+
+        if posting1 is not None:
+            yield posting1
+            yield from iter1
+        if posting2 is not None:
+            yield posting2
+            yield from iter2
 
     @staticmethod
     def difference(iter1: Iterator[Posting], iter2: Iterator[Posting]) -> Iterator[Posting]:
@@ -95,4 +124,18 @@ class PostingsMerger:
         All posting lists are assumed sorted in increasing order according
         to the document identifiers.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        posting1 = next(iter1, None)
+        posting2 = next(iter2, None)
+        while posting1 is not None and posting2 is not None:
+            if posting1.document_id < posting2.document_id:
+                yield posting1
+                posting1 = next(iter1, None)
+            elif posting1.document_id > posting2.document_id:
+                posting2 = next(iter2, None)
+            else:
+                posting1 = next(iter1, None)
+                posting2 = next(iter2, None)
+
+        if posting1 is not None:
+            yield posting1
+            yield from iter1
