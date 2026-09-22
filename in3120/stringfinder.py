@@ -55,4 +55,23 @@ class StringFinder:
         In a serious application we'd add more lookup/evaluation features, e.g., support for prefix matching,
         support for leftmost-longest matching (instead of reporting all matches), and more.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        states: List[StringFinder.State] = []
+        previous_end = 0
+        for term, (begin, end) in self._analyzer.terms(buffer, canonicalize=False):
+            separator = "" if begin == previous_end else " "
+            next_states = []
+            states.append(self.State(self._trie, begin, ""))
+            for state in states:
+                text = separator + term if state.match else term
+                node = state.node.consume(text)
+                if node is None:
+                    continue
+                match = state.match + text
+                next_states.append(self.State(node, state.begin, match))
+                if node.is_final():
+                    surface = self._analyzer.tokenizer.join(
+                        self._analyzer.tokenizer.tokens(buffer[state.begin:end])
+                    )
+                    yield self.Result(match, node.get_meta(), surface, state.begin, end)
+            states = next_states
+            previous_end = end

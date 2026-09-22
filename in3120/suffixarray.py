@@ -3,7 +3,6 @@
 # pylint: disable=line-too-long
 
 from bisect import bisect_left
-from itertools import takewhile
 from dataclasses import dataclass
 from typing import Iterator, Iterable, Tuple, List
 from collections import Counter
@@ -48,7 +47,15 @@ class SuffixArray:
         Builds a simple suffix array from the set of named fields in the document collection.
         The suffix array allows us to search across all named fields in one go.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        fields = tuple(fields)
+        for document in self._corpus:
+            for field in fields:
+                content = self._analyzer.join(document.get_field(field, ""))
+                index = len(self._haystack)
+                self._haystack.append((document.document_id, content))
+                for begin, _ in self._analyzer.tokenizer.spans(content):
+                    self._suffixes.append((index, begin))
+        self._suffixes.sort(key=self._get_suffix)
 
     def _get_suffix(self, pair: Tuple[int, int]) -> str:
         """
@@ -67,4 +74,19 @@ class SuffixArray:
         The matching documents are ranked according to how many times the query substring occurs in the document,
         and only the "best" matches are yielded back to the client. Ties are resolved arbitrarily.
         """
-        raise NotImplementedError("You need to implement this as part of the obligatory assignment.")
+        options = options or self.Options()
+        query = self._analyzer.join(query)
+        if not query or options.hit_count <= 0:
+            return
+
+        start = bisect_left(self._suffixes, query, key=self._get_suffix)
+        counts = Counter()
+        for position in range(start, len(self._suffixes)):
+            pair = self._suffixes[position]
+            if not self._get_suffix(pair).startswith(query):
+                break
+            document_id = self._haystack[pair[0]][0]
+            counts[document_id] += 1
+
+        for document_id, score in counts.most_common(options.hit_count):
+            yield self.Result(self._corpus[document_id], score)
